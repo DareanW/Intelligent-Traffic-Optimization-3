@@ -1,3 +1,12 @@
 sphinx
 furo
 myst-parser
+ray[tune]
+dm_tree
+typer
+opencv-python
+scipy
+lz4
+matplotlib
+seaborn
+stable_baselines3[extra]>=2.0.0a9
