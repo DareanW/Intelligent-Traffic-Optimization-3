@@ -3,6 +3,7 @@ import os
 import sys
 from datetime import datetime
 
+from sumo_rl.agents.ql_agent import GPlightPredictor, GPlight  # Import your GPlight agent here
 
 if "SUMO_HOME" in os.environ:
     tools = os.path.join(os.environ["SUMO_HOME"], "tools")
@@ -12,13 +13,12 @@ else:
 
 
 from sumo_rl import SumoEnvironment
-from sumo_rl.agents import QLAgent
 from sumo_rl.exploration import EpsilonGreedy
 
 
 if __name__ == "__main__":
     prs = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="""Q-Learning Single-Intersection"""
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter, description="""GPlight Agent Single-Intersection"""
     )
     prs.add_argument(
         "-route",
@@ -57,8 +57,8 @@ if __name__ == "__main__":
 
     for run in range(1, args.runs + 1):
         initial_states = env.reset()
-        ql_agents = {
-            ts: QLAgent(
+        gnn_agents = {
+            ts: GPlight(
                 starting_state=env.encode(initial_states[ts], ts),
                 state_space=env.observation_space,
                 action_space=env.action_space,
@@ -67,6 +67,7 @@ if __name__ == "__main__":
                 exploration_strategy=EpsilonGreedy(
                     initial_epsilon=args.epsilon, min_epsilon=args.min_epsilon, decay=args.decay
                 ),
+                gnn_model=GPlightPredictor(num_node_features=3, num_classes=2)
             )
             for ts in env.ts_ids
         }
@@ -75,14 +76,9 @@ if __name__ == "__main__":
         infos = []
         if args.fixed:
             while not done["__all__"]:
-                _, _, done, _ = env.step({})
+                _, _, _, done, _ = env.step({})
         else:
-            while not done["__all__"]:
-                actions = {ts: ql_agents[ts].act() for ts in ql_agents.keys()}
-
-                s, r, done, _ = env.step(action=actions)
-
-                for agent_id in ql_agents.keys():
-                    ql_agents[agent_id].learn(next_state=env.encode(s[agent_id], agent_id), reward=r[agent_id])
+            for agent_id in gnn_agents.keys():
+                gnn_agents[agent_id].run_episode(env, args.seconds)
         env.save_csv(out_csv, run)
         env.close()

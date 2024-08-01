@@ -14,7 +14,7 @@ else:
 import traci
 
 import sumo_rl
-from sumo_rl.agents import QLAgent
+from sumo_rl.agents import GPlight
 from sumo_rl.exploration import EpsilonGreedy
 
 
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         env.reset()
         initial_states = {ts: env.observe(ts) for ts in env.agents}
         ql_agents = {
-            ts: QLAgent(
+            ts: GPlight(
                 starting_state=env.unwrapped.env.encode(initial_states[ts], ts),
                 state_space=env.observation_space(ts),
                 action_space=env.action_space(ts),
